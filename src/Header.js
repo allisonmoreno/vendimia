@@ -1,5 +1,4 @@
 import React from 'react';
-import { BrowserRouter as Router, Route, Link } from "react-router-dom";
 import PropTypes from 'prop-types';
 import classNames from 'classnames';
 import { withStyles } from '@material-ui/core/styles';
@@ -19,9 +18,6 @@ import Settings from '@material-ui/icons/Settings';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
 import ListItemText from '@material-ui/core/ListItemText';
-import Configuracion from './components/Configuracion/Configuracion';
-
-
 
 const drawerWidth = 240;
 
@@ -83,61 +79,6 @@ const styles = theme => ({
   },
 });
 
-
-
-function Ventas() {
-  return <h2>Ventas</h2>;
-}
-
-function Clientes() {
-  return <h2>Clientes</h2>;
-}
-
-function Articulos() {
-  return <h2>Articulos</h2>;
-}
-
-function NotFound() {
-  return <h2>404</h2>;
-}
-
-////////////////////////////////////////////////////////////
-// then our route config
-
-const routes = [
-  {
-    path: "/ventas",
-    component: Ventas
-  },
-  {
-    path: "/clientes",
-    component: Clientes,
-  },
-  {
-    path: "/articulos",
-    component: Articulos,
-  },
-  {
-    path: "/configuracion",
-    component: Configuracion,
-  },
-];
-
-// wrap <Route> and use this everywhere instead, then when
-// sub routes are added to any route it'll work
-function RouteWithSubRoutes(route) {
-  return (
-    <Route
-      path={route.path}
-      render={props => (
-        // pass the sub-routes down to keep nesting
-        <route.component {...props} routes={route.routes} />
-      )}
-    />
-  );
-}
-
-
 class MiniDrawer extends React.Component {
   state = {
     open: false,
@@ -155,7 +96,6 @@ class MiniDrawer extends React.Component {
     const { classes, theme } = this.props;
 
     return (
-    <Router>
       <div className={classes.root}>
         <AppBar
           position="absolute"
@@ -193,7 +133,7 @@ class MiniDrawer extends React.Component {
           <div className={classes.toolbar}> 
           </div>
           <div>
-		    <ListItem button component="a" href="/ventas">
+		    <ListItem button>
 		      <ListItemIcon>
 		        <ShoppingCart />
 		      </ListItemIcon>
@@ -202,19 +142,19 @@ class MiniDrawer extends React.Component {
 		  </div>
           <Divider />
           <div>
-		    <ListItem button component="a" href="/clientes">
+		    <ListItem button>
 		      <ListItemIcon>
 		        <GroupIcon />
 		      </ListItemIcon>
 		      <ListItemText primary="Clientes" />
 		    </ListItem>
-		    <ListItem button component="a" href="/articulos">
+		    <ListItem button>
 		      <ListItemIcon>
 		        <Store />
 		      </ListItemIcon>
 		      <ListItemText primary="Artículos" />
 		    </ListItem>
-		    <ListItem button component="a" href="/configuracion">
+		    <ListItem button>
 		      <ListItemIcon>
 		        <Settings />
 		      </ListItemIcon>
@@ -224,12 +164,9 @@ class MiniDrawer extends React.Component {
         </Drawer>
         <main className={classes.content}>
           <div className={classes.toolbar} />
-           {routes.map((route, i) => (
-          <RouteWithSubRoutes key={i} {...route} />
-        ))}
+          <Typography noWrap>{'You think water moves fast? You should see ice.'}</Typography>
         </main>
       </div>
-      </Router>
     );
   }
 }
