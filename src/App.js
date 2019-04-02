@@ -19,8 +19,10 @@ import Settings from '@material-ui/icons/Settings';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
 import ListItemText from '@material-ui/core/ListItemText';
-import Configuracion from './components/Configuracion/Configuracion';
+import { SnackbarProvider } from 'notistack';
 
+import Configuracion from './components/Configuracion/Configuracion';
+import Clientes from './components/Clientes/Clientes';
 
 
 const drawerWidth = 240;
@@ -89,10 +91,6 @@ function Ventas() {
   return <h2>Ventas</h2>;
 }
 
-function Clientes() {
-  return <h2>Clientes</h2>;
-}
-
 function Articulos() {
   return <h2>Articulos</h2>;
 }
@@ -156,6 +154,7 @@ class MiniDrawer extends React.Component {
 
     return (
     <Router>
+    <SnackbarProvider maxSnack={3}>
       <div className={classes.root}>
         <AppBar
           position="absolute"
@@ -229,6 +228,7 @@ class MiniDrawer extends React.Component {
         ))}
         </main>
       </div>
+      </SnackbarProvider>
       </Router>
     );
   }
