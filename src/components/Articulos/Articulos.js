@@ -54,12 +54,12 @@ const styles = theme => ({
     fontSize: '16px'
   }
 });
-const defaultData = {id_cliente: 0, nombre: "", paterno: "", materno: "", rfc: ""};
+const defaultData = {id_articulo: 0, descripcion: "", precio: "", modelo: "", existencia: ""};
 
 const defaultErrors = {
-      nombre: true,
-      paterno: true,
-      rfc: true,
+      descripcion: true,
+      precio: true,
+      existencia: true,
     };
 
 function pad(n, width, z) {
@@ -70,7 +70,7 @@ function pad(n, width, z) {
 
 
 
-class Clientes extends React.Component {
+class Articulos extends React.Component {
   
   state = {
     error: null,
@@ -86,7 +86,7 @@ class Clientes extends React.Component {
 
   handleClickOpen = (paramData = {}) => {
   console.log(paramData, (typeof paramData));
-    if (paramData && typeof paramData.id_cliente != "undefined"){
+    if (paramData && typeof paramData.id_articulo != "undefined"){
       this.setState({ open: true, modalData: paramData});
     }else{
       this.setState({ open: true});
@@ -128,14 +128,14 @@ class Clientes extends React.Component {
       method: 'POST',
       headers: { 'content-type': 'application/x-www-form-urlencoded' },
       data: JSON.stringify(params),
-      url: 'http://localhost/vendimia/api/setClientes'
+      url: 'http://localhost/vendimia/api/setArticulos'
     };
 
     axios(options).then(res => {
       //console.log(res);
       if (res.data.success){
-        if (params.id_cliente == 0){
-          params.id_cliente = res.data.id_cliente;
+        if (params.id_articulo == 0){
+          params.id_articulo = res.data.id_articulo;
           items.push(params);
         }else{
           items[params.tableData.id] = params;
@@ -143,7 +143,7 @@ class Clientes extends React.Component {
 
         this.setState({ modalProcess: false, open: false, items: items, modalData: JSON.parse(JSON.stringify(defaultData)), errors: defaultErrors, modalInitialState: true, modalNextID: pad(res.data.nextID, 4) });
         
-        this.props.enqueueSnackbar('Bien Hecho. El cliente ha sido registrado correctamente.');
+        this.props.enqueueSnackbar('Bien Hecho. El Artículo ha sido registrado correctamente.');
 
       }else{
         this.setState({ modalProcess: false});
@@ -157,7 +157,7 @@ class Clientes extends React.Component {
   
 
   componentDidMount() {
-    fetch("http://localhost/vendimia/api/getClientes")
+    fetch("http://localhost/vendimia/api/getArticulos")
       .then(res => res.json())
       .then(
         (result) => {
@@ -214,25 +214,22 @@ class Clientes extends React.Component {
           onClick={this.handleClickOpen}
         >
           <AddButton className={classes.extendedIcon} />
-          Nuevo Cliente
+          Nuevo Artículo
         </Fab>
         <br/><br/><br/>
         <MaterialTable
-          title="Registro de Clientes"
+          title="Registro de Artículos"
           columns={[
-            { title: 'Clave Cliente', field: 'id_cliente',
+            { title: 'Clave Artículo', field: 'id_articulo',
               render: rowData => {
                 return (
                   <div style={{ width: '100%'}}>
-                    {pad(rowData.id_cliente, 4)}
+                    {pad(rowData.id_articulo, 4)}
                   </div>
                 )
               },
             },
-            { title: 'Nombre', field: 'nombre' },
-            { title: 'Paterno', field: 'paterno' },
-            { title: 'Materno', field: 'materno' },
-            { title: 'RFC', field: 'rfc' },
+            { title: 'Descripción', field: 'descripcion' },
             { title: 'Editar',
               render: rowData => {
                 return (
@@ -256,52 +253,52 @@ class Clientes extends React.Component {
           <div className={classNames(classes.root, !this.state.modalProcess && classes.hide)}>
             <LinearProgress variant="query" />
           </div>
-          <DialogTitle id="form-dialog-title">Registro de Clientes <span className={classes.folio}>Folio: {this.state.modalNextID}</span></DialogTitle>
+          <DialogTitle id="form-dialog-title">Registro de Artículos <span className={classes.folio}>Folio: {this.state.modalNextID}</span></DialogTitle>
           <DialogContent>
             <TextField
               autoFocus
               margin="dense"
-              id="modalNombre"
-              name="nombre"
-              label="Nombre"
+              id="modalDescripcion"
+              name="descripcion"
+              label="Descripción"
               type="text"
-              value={this.state.modalData.nombre}
-              error={(!this.state.modalInitialState && this.state.errors.nombre)}
+              value={this.state.modalData.descripcion}
+              error={(!this.state.modalInitialState && this.state.errors.descripcion)}
               onChange={this.handleChange}
               required
               fullWidth
             />
             <TextField
               margin="dense"
-              id="modalPaterno"
-              name="paterno"
-              label="Apellido Paterno"
+              id="modalModelo"
+              name="modelo"
+              label="Modelo"
               type="text"
-              value={this.state.modalData.paterno}
-              error={(!this.state.modalInitialState && this.state.errors.paterno)}
+              value={this.state.modalData.modelo}
+              onChange={this.handleChange}
+              fullWidth
+            />
+            <TextField
+              margin="dense"
+              id="modalPrecio"
+              name="precio"
+              label="Precio"
+              type="number"
+              value={this.state.modalData.precio}
+              error={(!this.state.modalInitialState && this.state.errors.precio)}
               onChange={this.handleChange}
               required
               fullWidth
             />
             <TextField
               margin="dense"
-              id="modalMaterno"
-              name="materno"
-              label="Apellido Materno"
-              type="text"
-              value={this.state.modalData.materno}
-              onChange={this.handleChange}
-              fullWidth
-            />
-            <TextField
-              margin="dense"
-              id="modalRFC"
-              name="rfc"
-              label="RFC"
-              type="text"
+              id="modalExistencia"
+              name="existencia"
+              label="Existencia"
+              type="number"
               required
-              value={this.state.modalData.rfc}
-              error={(!this.state.modalInitialState && this.state.errors.rfc)}
+              value={this.state.modalData.existencia}
+              error={(!this.state.modalInitialState && this.state.errors.existencia)}
               onChange={this.handleChange}
               fullWidth
             />
@@ -322,5 +319,5 @@ class Clientes extends React.Component {
 }
 
 export default withStyles(styles)(
-    withSnackbar(Clientes),
+    withSnackbar(Articulos),
 );

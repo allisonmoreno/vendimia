@@ -106,4 +106,11 @@ class Base_Model extends CI_Model {
         //echo "<h1>".$this->db->affected_rows()."</h1>";
         return ($this->db->affected_rows()>0) ? true : false;
     }
+
+    function getLastID(){
+        $this->db->from($this->table);
+        $this->db->select('MAX('.$this->id_column.') AS id');
+        $tmp = $this->db->get()->row();
+        return (isset($tmp->id)) ? (int)$tmp->id : 0;
+    }
 }

@@ -23,7 +23,8 @@ import { SnackbarProvider } from 'notistack';
 
 import Configuracion from './components/Configuracion/Configuracion';
 import Clientes from './components/Clientes/Clientes';
-
+import Articulos from './components/Articulos/Articulos';
+import Ventas from './components/Ventas/Ventas';
 
 const drawerWidth = 240;
 
@@ -84,16 +85,6 @@ const styles = theme => ({
     padding: theme.spacing.unit * 3,
   },
 });
-
-
-
-function Ventas() {
-  return <h2>Ventas</h2>;
-}
-
-function Articulos() {
-  return <h2>Articulos</h2>;
-}
 
 function NotFound() {
   return <h2>404</h2>;

@@ -47,12 +47,16 @@ class Configuracion extends React.Component {
   handleSubmit = event => {
     event.preventDefault();
 
-    const params = this.state.items;
+    const params = {params: this.state.items};
 
-    
+    const options = {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      data: JSON.stringify(params),
+      url: 'http://localhost/vendimia/api/setConfiguraciones'
+    };
 
-    axios.post('http://localhost/vendimia/api/setConfiguraciones', { params})
-      .then(res => {
+    axios(options).then(res => {
         this.props.enqueueSnackbar('Ajustes Guardados.');
       })
   }
