@@ -22,6 +22,27 @@ import MenuItem from '@material-ui/core/MenuItem';
 import CancelIcon from '@material-ui/icons/Cancel';
 import FormLabel from '@material-ui/core/FormLabel';
 import AddIcon from '@material-ui/icons/Add';
+import Table from '@material-ui/core/Table';
+import TableBody from '@material-ui/core/TableBody';
+import TableCell from '@material-ui/core/TableCell';
+import TableHead from '@material-ui/core/TableHead';
+import TableRow from '@material-ui/core/TableRow';
+import Radio from '@material-ui/core/Radio';
+import RadioButtonUncheckedIcon from '@material-ui/icons/RadioButtonUnchecked';
+import RadioButtonCheckedIcon from '@material-ui/icons/RadioButtonChecked';
+
+
+const CustomTableCell = withStyles(theme => ({
+  head: {
+    backgroundColor: theme.palette.common.black,
+    color: theme.palette.common.white,
+    fontSize: 18,
+    textAlign: 'center'
+  },
+  body: {
+    fontSize: 14,
+  },
+}))(TableCell);
 
 const styles = theme => ({
   root: {
@@ -84,7 +105,17 @@ const styles = theme => ({
   folio:{
         float: 'right',
     fontSize: '16px'
-  }
+  },
+  resultValue:{
+    width: '90px',
+    display: 'inline-block',
+    paddingLeft: '10px'
+  },
+  row: {
+    '&:nth-of-type(odd)': {
+      backgroundColor: theme.palette.background.default,
+    },
+  },
 });
 
 const defaultData = {id_venta: 0, descripcion: "", precio: "", modelo: "", existencia: ""};
@@ -229,7 +260,15 @@ class Ventas extends React.Component {
     selectedCliente: null,
     selectedArticulo: null,
     rfc: "",
-    articulos: []
+    articulos: [],
+    configuracion: [],
+    importe: 0.0,
+    enganche: 0.0,
+    bonificacion_enganche: 0.0,
+    total: 0.0,
+    precio_contado: 0.0,
+    abonos: [],
+    plazo_abonos: 0
   };
 
   filterClientes = (inputValue: string) => {
@@ -291,6 +330,7 @@ loadArticulos= (inputValue, callback) => {
   handleClickAddArticulo = () => {
     const articulo = JSON.parse(JSON.stringify(this.state.selectedArticulo));
     const articulos = JSON.parse(JSON.stringify(this.state.articulos));
+    var importe = parseFloat(this.state.importe)
     if (articulo.existencia > 0){
       var cantidad = this.getCantidadArticulo(articulo.value);
       if (cantidad > 0){
@@ -302,10 +342,16 @@ loadArticulos= (inputValue, callback) => {
         articulo.cantidad = 1;
         articulos.push(articulo);
       }
-      
-      this.setState({ articulos: articulos});
+
+      importe = importe + parseFloat(articulo.precio);
+      var enganche = (importe * (parseFloat(this.state.configuracion.porcentaje_enganche) / 100));
+      var bonificacion_enganche = (enganche * ((this.state.configuracion.tasa_financiamiento * this.state.configuracion.plazo_maximo ) / 100));
+      var total = importe - enganche - bonificacion_enganche;
+      var precio_contado = total / (1 + ((this.state.configuracion.tasa_financiamiento * this.state.configuracion.plazo_maximo) / 100));
+      this.setState({ articulos: articulos, importe: importe, enganche: enganche, bonificacion_enganche: bonificacion_enganche, total: total, precio_contado: precio_contado});
     }
   };
+
 
   getCantidadArticulo = (id) => {
     if (this.state.articulos.length > 0){
@@ -322,15 +368,36 @@ loadArticulos= (inputValue, callback) => {
     return 0;
   }
 
-  //handleClickDeleteArticulo
-
   handleClickDeleteArticulo = (paramData = {}) => {
     if (paramData && typeof paramData.value != "undefined"){
       const articulos = JSON.parse(JSON.stringify(this.state.articulos));
 
       var pos = articulos.map(function(e) { return e.value; }).indexOf(paramData.value);
       articulos.splice(pos, 1);
-      this.setState({ articulos: articulos});
+
+      var importe = 0;
+      var enganche = 0;
+      var bonificacion_enganche = 0;
+      var total = 0;
+      var precio_contado = 0;
+
+      if (articulos.length > 0){
+
+        for (var i in articulos){
+          importe += (parseFloat(articulos[i].precio) * parseInt(articulos[i].cantidad));
+          console.log(articulos[i], importe);
+        }
+        enganche = (importe * (parseFloat(this.state.configuracion.porcentaje_enganche) / 100));
+        bonificacion_enganche = (enganche * ((this.state.configuracion.tasa_financiamiento * this.state.configuracion.plazo_maximo ) / 100));
+
+      }
+      
+      if (importe > 0){
+        total = importe - enganche - bonificacion_enganche;
+        precio_contado = total / (1 + ((this.state.configuracion.tasa_financiamiento * this.state.configuracion.plazo_maximo) / 100));
+      }
+      
+      this.setState({ articulos: articulos, importe: importe, enganche: enganche, bonificacion_enganche: bonificacion_enganche, total: total, precio_contado: precio_contado});
     }
     
   };
@@ -409,10 +476,17 @@ loadArticulos= (inputValue, callback) => {
       .then(res => res.json())
       .then(
         (result) => {
+          var abonos = [];
+          for (var i = 3; i <= result.configuracion.plazo_maximo; i += 3) {
+            abonos.push(i);
+          }
+          console.log(abonos);
           this.setState({
             isLoaded: true,
             items: result.data,
-            nextID: pad(result.nextID, 4)
+            nextID: pad(result.nextID, 4),
+            configuracion: result.configuracion,
+            abonos: abonos
           });
         },
         // Note: it's important to handle errors here
@@ -458,6 +532,10 @@ loadArticulos= (inputValue, callback) => {
       });
     }
   }
+
+  handleChangeAbonos = event => {
+    this.setState({ plazo_abonos: event.target.value });
+  };
 
   render() {
     const { classes } = this.props;
@@ -539,7 +617,7 @@ loadArticulos= (inputValue, callback) => {
           </Typography>
           <div><span className={classes.folio}>Folio Venta: {this.state.nextID}</span></div>
           <Grid container spacing={24}>
-            <Grid item xs={5}>
+            <Grid item xs={12} sm={5}>
               <AsyncSelect
                 classes={classes}
                 components={components}
@@ -554,11 +632,11 @@ loadArticulos= (inputValue, callback) => {
               />
 
             </Grid>
-            <Grid item xs={6}>
+            <Grid item xs={12} sm={6}>
               <FormLabel component="legend" className={classes.FormLabel}>{this.state.rfc}</FormLabel>
             </Grid>
             
-            <Grid item xs={5}>
+            <Grid item xs={12} sm={5}>
               <AsyncSelect
                 classes={classes}
                 components={components}
@@ -573,7 +651,7 @@ loadArticulos= (inputValue, callback) => {
               />
 
             </Grid>
-            <Grid item xs={6}>
+            <Grid item item xs={12} sm={6}>
               <Fab size="small" color="secondary" aria-label="Add"
               className={classNames(classes.addButton,classes.margin,(this.state.selectedArticulo === null) && classes.hide)} 
               onClick={this.handleClickAddArticulo}
@@ -620,7 +698,59 @@ loadArticulos= (inputValue, callback) => {
                 ]}
                 data={this.state.articulos}
               />
+
+              <Grid
+                container
+                direction="column"
+                justify="flex-end"
+                alignItems="flex-end"
+              >
+                <div style={{padding: '12px 0px',textAlign: 'right'}}>
+                  <div style={{padding: '2px 0px'}}>Enganche: <span className={classes.resultValue}>{moneda(this.state.enganche)}</span></div>
+                  <div style={{padding: '2px 0px'}}>Bonificación Enganche: <span className={classes.resultValue}>{moneda(this.state.bonificacion_enganche)}</span></div>
+                  <div style={{padding: '2px 0px'}}>Total: <span className={classes.resultValue}>{moneda(this.state.total)}</span></div>
+                </div>
+             
+             
+              </Grid>
             </Grid>
+            <Grid item xs={12}>
+                <Table className={classes.table}>
+                  <TableHead>
+                    <TableRow>
+                      <CustomTableCell colSpan={5}>Abonos Mensuales</CustomTableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {this.state.abonos.map(plazo => (
+                      <TableRow className={classes.row} key={plazo}>
+                        <CustomTableCell component="th" scope="row">
+                          {plazo} ABONOS DE
+                        </CustomTableCell>
+                        <CustomTableCell align="right">
+                          {moneda((this.state.precio_contado * (1 + (this.state.configuracion.tasa_financiamiento * plazo) / 100)) / plazo)}
+                        </CustomTableCell>
+                        <CustomTableCell align="right">
+                        TOTAL A PAGAR {moneda((this.state.precio_contado * (1 + (this.state.configuracion.tasa_financiamiento * plazo) / 100)))}
+                        </CustomTableCell>
+                        <CustomTableCell align="right">
+                        SE AHORRA {moneda(this.state.total - (this.state.precio_contado * (1 + (this.state.configuracion.tasa_financiamiento * plazo) / 100)))}
+                        </CustomTableCell>
+                        <CustomTableCell align="right">
+                          <Radio
+                            checked={this.state.plazo_abonos == plazo}
+                            onChange={this.handleChangeAbonos}
+                            value={plazo}
+                            name="abonos-mensuales"
+                          />
+                        </CustomTableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+
+            </Grid>
+           
             <Grid item sm={12}>
               <div className={classes.actions}>
                 <Button

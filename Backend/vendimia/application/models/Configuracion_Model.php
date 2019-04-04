@@ -12,5 +12,17 @@ class Configuracion_Model extends Base_Model {
         $this->id_column = 'id';
     }
 
+    function getConfiguracion(){
+    	$config = [];
+    	$this->db->select('valor, slug'); 
+        $this->db->from($this->table); 
+        
+        foreach ($this->db->get()->result() as $key => $value) {
+        	$config[$value->slug] = (float)$value->valor;
+        }
+
+        return $config;
+    }
+
 
 }

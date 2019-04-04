@@ -27,10 +27,25 @@ class Api extends CI_Controller {
 
 	/*Ventas */
 
+	public function searchClientes($nombre = ""){
+        $this->load->database('default');
+        $this->load->model('clientes_model','clientes');
+        echo json_encode(['success' => true, 'data' => $this->clientes->searchByName($nombre)]);
+        exit();
+	}
+
+	public function searchArticulos($nombre = ""){
+        $this->load->database('default');
+        $this->load->model('articulos_model','articulos');
+        echo json_encode(['success' => true, 'data' => $this->articulos->searchByName($nombre)]);
+        exit();
+	}
+
 	public function getVentas(){
         $this->load->database('default');
         $this->load->model('ventas_model','ventas');
-        echo json_encode(['success' => true, 'data' => $this->ventas->getVentas(), 'nextID' => ($this->ventas->getLastID() + 1) ]);
+        $this->load->model('configuracion_model','configuracion');
+        echo json_encode(['success' => true, 'data' => $this->ventas->getVentas(), 'nextID' => ($this->ventas->getLastID() + 1), 'configuracion' => $this->configuracion->getConfiguracion() ]);
         exit();
 	}
 

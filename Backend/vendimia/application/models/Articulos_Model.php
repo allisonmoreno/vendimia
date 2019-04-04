@@ -15,22 +15,11 @@ class Articulos_model extends Base_model {
 
 
     function searchByName($input){
-        $names = explode(" ", $input);
-        $this->db->select('id_cliente AS id, CONCAT(nombre, \' \', paterno, \' \', materno) AS text',false); 
+        
+        $this->db->select('id_articulo AS value, descripcion AS label, modelo, precio, existencia'); 
         $this->db->from($this->table); 
-        $i=0;
-        $inputs = array('nombre','paterno','materno');
-
-        foreach ($names as $name) {
-            foreach ($inputs as $input) {
-                if($i==0){
-                    $this->db->like($input, $name); 
-                }else{
-                    $this->db->or_like($input, $name);
-                }
-                $i++;
-            }
-        }
+        
+        $this->db->like('descripcion', $input); 
 
         return $this->db->get()->result();
     }
