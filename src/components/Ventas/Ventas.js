@@ -11,45 +11,82 @@ import InputAdornment from '@material-ui/core/InputAdornment';
 import { withSnackbar } from 'notistack';
 import IconButton from '@material-ui/core/IconButton';
 import Fab from '@material-ui/core/Fab';
-import EditButton from '@material-ui/icons/Edit';
+import DeleteButton from '@material-ui/icons/Delete';
 import AddButton from '@material-ui/icons/Add';
 import MaterialTable from 'material-table'
 import LinearProgress from '@material-ui/core/LinearProgress';
 import AsyncSelect from 'react-select/lib/Async';
-
+import NoSsr from '@material-ui/core/NoSsr';
+import Paper from '@material-ui/core/Paper';
+import MenuItem from '@material-ui/core/MenuItem';
+import CancelIcon from '@material-ui/icons/Cancel';
+import FormLabel from '@material-ui/core/FormLabel';
+import AddIcon from '@material-ui/icons/Add';
 
 const styles = theme => ({
-  container: {
+  root: {
+    flexGrow: 1,
+  },
+   input: {
+    display: 'flex',
+    padding: 0,
+  },
+  FormLabel:{
+    lineHeight: 2
+  },
+  valueContainer: {
     display: 'flex',
     flexWrap: 'wrap',
-  },
-  textField: {
-    marginLeft: theme.spacing.unit,
-    marginRight: theme.spacing.unit,
-    width: '100%',
+    flex: 1,
+    alignItems: 'center',
+    overflow: 'hidden',
   },
   hide: {
     display: 'none',
+  },
+  noOptionsMessage: {
+    padding: `${theme.spacing.unit}px ${theme.spacing.unit * 2}px`,
+  },
+  singleValue: {
+    fontSize: 16,
+  },
+  placeholder: {
+    position: 'absolute',
+    left: 2,
+    fontSize: 16,
+  },
+  paper: {
+    position: 'absolute',
+    zIndex: 1,
+    marginTop: theme.spacing.unit,
+    left: 0,
+    right: 0,
+  },
+  divider: {
+    height: theme.spacing.unit * 2,
   },
   button: {
     margin: theme.spacing.unit,
   },
   addButton: {
+    background: '#8bc34a',
+     "&:hover": {
+      background: "#4caf50"
+    },
+  },
+  fright:{
     float: 'right',
-    background: '#4caf50'
   },
   actions: {
     display: "flex",
     justifyContent: "flex-end"
-  },
-  root: {
-    flexGrow: 1,
   },
   folio:{
         float: 'right',
     fontSize: '16px'
   }
 });
+
 const defaultData = {id_venta: 0, descripcion: "", precio: "", modelo: "", existencia: ""};
 
 const defaultErrors = {
@@ -79,6 +116,103 @@ function estatus(estatus){
   return label;
 }
 
+
+function NoOptionsMessage(props) {
+  return (
+    <Typography
+      color="textSecondary"
+      className={props.selectProps.classes.noOptionsMessage}
+      {...props.innerProps}
+    >
+      {props.children}
+    </Typography>
+  );
+}
+
+function inputComponent({ inputRef, ...props }) {
+  return <div ref={inputRef} {...props} />;
+}
+
+function Control(props) {
+  return (
+    <TextField
+      fullWidth
+      InputProps={{
+        inputComponent,
+        inputProps: {
+          className: props.selectProps.classes.input,
+          inputRef: props.innerRef,
+          children: props.children,
+          ...props.innerProps,
+        },
+      }}
+      {...props.selectProps.textFieldProps}
+    />
+  );
+}
+
+function Option(props) {
+  return (
+    <MenuItem
+      buttonRef={props.innerRef}
+      selected={props.isFocused}
+      component="div"
+      style={{
+        fontWeight: props.isSelected ? 500 : 400,
+      }}
+      {...props.innerProps}
+    >
+      {props.children}
+    </MenuItem>
+  );
+}
+
+function Placeholder(props) {
+  return (
+    <Typography
+      color="textSecondary"
+      className={props.selectProps.classes.placeholder}
+      {...props.innerProps}
+    >
+      {props.children}
+    </Typography>
+  );
+}
+
+function SingleValue(props) {
+  return (
+    <Typography className={props.selectProps.classes.singleValue} {...props.innerProps}>
+      {props.children}
+    </Typography>
+  );
+}
+
+function ValueContainer(props) {
+  return <div className={props.selectProps.classes.valueContainer}>{props.children}</div>;
+}
+
+function Menu(props) {
+  return (
+    <Paper square style={{
+        zIndex: 100
+      }} 
+      className={props.selectProps.classes.paper} {...props.innerProps}>
+      {props.children}
+    </Paper>
+  );
+}
+
+const components = {
+  Control,
+  Menu,
+  NoOptionsMessage,
+  Option,
+  Placeholder,
+  SingleValue,
+  ValueContainer,
+};
+
+
 class Ventas extends React.Component {
   
   state = {
@@ -86,43 +220,127 @@ class Ventas extends React.Component {
     isLoaded: false,
     items: [],
     tableMode: false,
-    modalData: JSON.parse(JSON.stringify(defaultData)),
     errors: defaultErrors,
     modalProcess: false,
     nextID: '0000',
     tableMode: false,
-    loadOptions: [
-            { label: 'Afghanistan', value: 1 },
-            { label: 'Aland Islands', value: 2 },
-            { label: 'Albania', value: 3 },
-            { label: 'Anguilla', value: 4 }
-          ]
+    loadClientes: [],
+    loadArticulos: [],
+    selectedCliente: null,
+    selectedArticulo: null,
+    rfc: "",
+    articulos: []
   };
 
-  filterSuggestions = (inputValue: string) => {
-    console.log("filterSuggestions  => " + inputValue, this.state.loadOptions)
-    return this.state.loadOptions.filter(i =>
-      i.label.toLowerCase().includes(inputValue.toLowerCase())
-    );
+  filterClientes = (inputValue: string) => {
+    //console.log("filterSuggestions  => " + inputValue, this.state.loadClientes)
+    if (this.state.loadClientes.length > 0){
+      return this.state.loadClientes.filter(i =>
+        i.label.toLowerCase().includes(inputValue.toLowerCase())
+      );
+    }else{
+      return []
+    }
+  };
+  
+  filterArticulos = (inputValue: string) => {
+    //console.log("filterSuggestions  => " + inputValue, this.state.loadClientes)
+    if (this.state.loadArticulos.length > 0){
+      return this.state.loadArticulos.filter(i =>
+        i.label.toLowerCase().includes(inputValue.toLowerCase())
+      );
+    }else{
+      return []
+    }
   };
 
-loadOptions = (inputValue, callback) => {
-  callback(this.filterSuggestions(inputValue));
+loadClientes = (inputValue, callback) => {
+  const options = {
+      method: 'GET',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      url: 'http://localhost/vendimia/api/searchClientes/' + encodeURIComponent(inputValue)
+    };
+
+    axios(options).then(res => {
+      //console.log(res);
+      if (res.data.success){
+        this.setState({loadClientes: res.data.data});
+        callback(this.filterClientes(inputValue));
+      }
+        
+      });
 };
 
-  handleClickOpen = () => {
-    console.log("handleClickOpen")
-      this.setState({ tableMode: false});
+loadArticulos= (inputValue, callback) => {
+  const options = {
+      method: 'GET',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      url: 'http://localhost/vendimia/api/searchArticulos/' + encodeURIComponent(inputValue)
+    };
 
+    axios(options).then(res => {
+      //console.log(res);
+      if (res.data.success){
+        this.setState({loadArticulos: res.data.data});
+        callback(this.filterArticulos(inputValue));
+      }
+        
+      });
+};
+
+  handleClickAddArticulo = () => {
+    const articulo = JSON.parse(JSON.stringify(this.state.selectedArticulo));
+    const articulos = JSON.parse(JSON.stringify(this.state.articulos));
+    if (articulo.existencia > 0){
+      var cantidad = this.getCantidadArticulo(articulo.value);
+      if (cantidad > 0){
+        if ( cantidad < articulo.existencia){
+          var pos = articulos.map(function(e) { return e.value; }).indexOf(articulo.value);
+          articulos[pos].cantidad = cantidad + 1;
+        }
+      }else{
+        articulo.cantidad = 1;
+        articulos.push(articulo);
+      }
+      
+      this.setState({ articulos: articulos});
+    }
+  };
+
+  getCantidadArticulo = (id) => {
+    if (this.state.articulos.length > 0){
+      const filtered = this.state.articulos.filter(i =>
+        i.value == id
+      );
+      //console.log("filtered",filtered);
+      if (filtered.length > 0 && typeof filtered[0].cantidad != "undefined"){
+        return filtered[0].cantidad
+      }else{
+        return 0;
+      }
+    } 
+    return 0;
+  }
+
+  //handleClickDeleteArticulo
+
+  handleClickDeleteArticulo = (paramData = {}) => {
+    if (paramData && typeof paramData.value != "undefined"){
+      const articulos = JSON.parse(JSON.stringify(this.state.articulos));
+
+      var pos = articulos.map(function(e) { return e.value; }).indexOf(paramData.value);
+      articulos.splice(pos, 1);
+      this.setState({ articulos: articulos});
+    }
     
   };
 
-  handleClose = () => {
-    this.setState({ tableMode: true, modalData: JSON.parse(JSON.stringify(defaultData)), errors: defaultErrors });
+  handleClickOpen = () => {
+      this.setState({ tableMode: false});
   };
 
    handleCancel = () => {
-    window.location.href= "/"
+    this.setState({ tableMode: true});
   };
 
   handleSubmit = event => {
@@ -164,7 +382,7 @@ loadOptions = (inputValue, callback) => {
           items[params.tableData.id] = params;
         }
 
-        this.setState({ modalProcess: false, tableMode: true, items: items, modalData: JSON.parse(JSON.stringify(defaultData)), errors: defaultErrors, nextID: pad(res.data.nextID, 4) });
+        this.setState({ modalProcess: false, tableMode: true, items: items, errors: defaultErrors, nextID: pad(res.data.nextID, 4) });
         
         this.props.enqueueSnackbar('Bien Hecho. El Venta ha sido registrado correctamente.');
 
@@ -209,14 +427,41 @@ loadOptions = (inputValue, callback) => {
       )
   }
 
-   handleChange = (e) => {
-   
-  };
+  handleChangeCliente = (selectedCliente) => {
+    if (selectedCliente != null && selectedCliente.rfc != null){
+      var data = JSON.parse(JSON.stringify(selectedCliente))
+      data.label = pad(data.value, 4) + " - " + data.label
+      this.setState({
+        rfc: "RFC: " + data.rfc,
+        selectedCliente: data
+      });
+    }else{
+      
+      this.setState({
+        rfc: "",
+        selectedCliente: null
+      });
+    }
+  }
 
+   handleChangeArticulo = (selectedArticulo) => {
+    if (selectedArticulo != null && selectedArticulo.value != null){
+      var data = JSON.parse(JSON.stringify(selectedArticulo))
+      //data.label = pad(data.value, 4) + " - " + data.label
+      this.setState({
+        selectedArticulo: data
+      });
+    }else{
+      
+      this.setState({
+        selectedArticulo: null
+      });
+    }
+  }
 
   render() {
     const { classes } = this.props;
-    const { error, isLoaded, items } = this.state;
+    const { error, isLoaded, items, selectedCliente, selectedArticulo } = this.state;
 
     if (error) {
       return <div>Error: {error.message}</div>;
@@ -230,7 +475,7 @@ loadOptions = (inputValue, callback) => {
           size="medium"
           color="primary"
           aria-label="Agregar"
-          className={classNames(classes.addButton,classes.margin)} 
+          className={classNames(classes.addButton,classes.margin,classes.fright)} 
           onClick={this.handleClickOpen}
         >
           <AddButton className={classes.extendedIcon} />
@@ -292,19 +537,90 @@ loadOptions = (inputValue, callback) => {
         <Typography variant="h6" gutterBottom>
             Registro de Ventas
           </Typography>
+          <div><span className={classes.folio}>Folio Venta: {this.state.nextID}</span></div>
           <Grid container spacing={24}>
-            <Grid item sm={12}>
-              <Grid item xs={6} sm={4}>
-                <AsyncSelect
-                  cacheOptions
-                  loadOptions={this.loadOptions}
-                  defaultOptions
-                  onInputChange={this.handleInputChange}
-                />
-              </Grid>
-            </Grid>
+            <Grid item xs={5}>
+              <AsyncSelect
+                classes={classes}
+                components={components}
+                value={selectedCliente}
+                onChange={this.handleChangeCliente}
+                placeholder="Cliente:"
+                isClearable
+                cacheOptions
+                loadOptions={this.loadClientes}
+                defaultOptions
+                onInputChange={this.handleInputChange}
+              />
 
-              
+            </Grid>
+            <Grid item xs={6}>
+              <FormLabel component="legend" className={classes.FormLabel}>{this.state.rfc}</FormLabel>
+            </Grid>
+            
+            <Grid item xs={5}>
+              <AsyncSelect
+                classes={classes}
+                components={components}
+                value={selectedArticulo}
+                onChange={this.handleChangeArticulo}
+                placeholder="Artículo:"
+                isClearable
+                cacheOptions
+                loadOptions={this.loadArticulos}
+                defaultOptions
+                onInputChange={this.handleInputChange}
+              />
+
+            </Grid>
+            <Grid item xs={6}>
+              <Fab size="small" color="secondary" aria-label="Add"
+              className={classNames(classes.addButton,classes.margin,(this.state.selectedArticulo === null) && classes.hide)} 
+              onClick={this.handleClickAddArticulo}
+              >
+                <AddIcon />
+              </Fab>
+            </Grid>
+            <Grid item xs={12}>
+                <MaterialTable
+                title=""
+                columns={[
+                  { title: 'Descripción Artículo', field: 'label' },
+                  { title: 'Modelo', field: 'modelo' },
+                  { title: 'Cantidad', field: 'cantidad' },
+                  { title: 'Precio', field: 'precio',
+                     render: rowData => {
+                      return (
+                        <div style={{ width: '100%'}}>
+                          {moneda(rowData.precio)}
+                        </div>
+                      )
+                    },
+                  },
+                  { title: 'Importe',
+                    render: rowData => {
+                        return (
+                          <div style={{ width: '100%'}}>
+                            {moneda((parseFloat(rowData.precio)*parseInt(rowData.cantidad)))}
+                          </div>
+                        )
+                    },
+                  },
+                  { title: '',
+                    render: rowData => {
+                      return (
+                        <div style={{ width: '100%'}}>
+                          <IconButton aria-label="Editar" className={classes.margin} onClick={(e) => {this.handleClickDeleteArticulo(JSON.parse(JSON.stringify(rowData)))}}>
+                            <DeleteButton fontSize="small" />
+                          </IconButton>
+                        </div>
+                      )
+                    },
+                  },
+                ]}
+                data={this.state.articulos}
+              />
+            </Grid>
             <Grid item sm={12}>
               <div className={classes.actions}>
                 <Button
@@ -323,7 +639,7 @@ loadOptions = (inputValue, callback) => {
                     type="submit"
                   label="Submit"
                   >
-                    Guardar
+                    Siguiente
                   </Button>
               </div>
             </Grid>
