@@ -49,25 +49,28 @@ class Api extends CI_Controller {
         exit();
 	}
 
-	public function setVentas(){
+	public function setVenta(){
 		$post = json_decode(file_get_contents('php://input'), true);
 
-		if (isset($post["descripcion"])){
+		if (isset($post["articulos"])){
 			
-			$id_venta = (int)$post["id_venta"];
+			$articulos = $post["articulos"];
 			unset($post["id_venta"]);
+			unset($post["articulos"]);
 			unset($post["tableData"]);
 
 			$this->load->database('default');
         	$this->load->model('ventas_model','ventas');
 
+			$id_venta = $this->ventas->addNew($post);
+
 			if($id_venta > 0){
-				$this->ventas->update($id_venta,$post);
+				$this->ventas->setArticulos($id_venta, $articulos);
+				echo json_encode(['success' => true, 'message' => 'Venta agregada', 'id_venta' => $id_venta, 'nextID' => ($this->ventas->getLastID() + 1), 'fecha' => $this->ventas->getByID($id_venta)->fecha]);
 			}else{
-				$id_venta = $this->ventas->addNew($post);
+				echo json_encode(['success' => false, 'message' => 'Hubo un problema al agregar la venta']);
 			}
 			
-			echo json_encode(['success' => true, 'message' => 'Artículo agregado', 'id_venta' => $id_venta, 'nextID' => ($this->ventas->getLastID() + 1)]);
 		}else{
 			echo json_encode(['success' => false, 'message' => 'Hubo un problema al agregar venta']);
 		}

@@ -5,9 +5,9 @@
 # http://www.sequelpro.com/
 # https://github.com/sequelpro/sequelpro
 #
-# Host: 127.0.0.1 (MySQL 5.5.5-10.1.32-MariaDB)
+# Host: 127.0.0.1 (MySQL 5.5.5-10.1.16-MariaDB)
 # Base de datos: vendimia
-# Tiempo de Generación: 2019-04-04 09:23:58 +0000
+# Tiempo de Generación: 2019-04-04 21:47:43 +0000
 # ************************************************************
 
 
@@ -60,6 +60,17 @@ CREATE TABLE `articulos_ventas` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+LOCK TABLES `articulos_ventas` WRITE;
+/*!40000 ALTER TABLE `articulos_ventas` DISABLE KEYS */;
+
+INSERT INTO `articulos_ventas` (`id`, `id_venta`, `id_articulo`, `cantidad`)
+VALUES
+	(1,2,1,1),
+	(2,3,1,1),
+	(3,4,1,1);
+
+/*!40000 ALTER TABLE `articulos_ventas` ENABLE KEYS */;
+UNLOCK TABLES;
 
 
 # Volcado de tabla clientes
@@ -81,7 +92,7 @@ LOCK TABLES `clientes` WRITE;
 
 INSERT INTO `clientes` (`id_cliente`, `nombre`, `paterno`, `materno`, `rfc`)
 VALUES
-	(1,'Allison','Moreno','Preciado','MOPA940716QB6');
+	(1,'Allison','Moreno','Preciado','XAXX010101000');
 
 /*!40000 ALTER TABLE `clientes` ENABLE KEYS */;
 UNLOCK TABLES;
@@ -122,17 +133,21 @@ CREATE TABLE `ventas` (
   `id_venta` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `FK_id_cliente` int(11) DEFAULT NULL,
   `total` double DEFAULT NULL,
-  `fecha` datetime DEFAULT NULL,
+  `fecha` datetime DEFAULT CURRENT_TIMESTAMP,
   `estatus` tinyint(1) DEFAULT '1',
+  `plazo` int(11) DEFAULT NULL,
   PRIMARY KEY (`id_venta`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 LOCK TABLES `ventas` WRITE;
 /*!40000 ALTER TABLE `ventas` DISABLE KEYS */;
 
-INSERT INTO `ventas` (`id_venta`, `FK_id_cliente`, `total`, `fecha`, `estatus`)
+INSERT INTO `ventas` (`id_venta`, `FK_id_cliente`, `total`, `fecha`, `estatus`, `plazo`)
 VALUES
-	(1,1,1527,'2019-04-03 00:00:00',1);
+	(1,1,1527,'2019-04-03 00:00:00',1,NULL),
+	(2,1,4160.8384,'2019-04-04 14:33:13',1,NULL),
+	(3,1,4160.8384,'2019-04-04 14:36:38',1,6),
+	(4,1,4160.8384,'2019-04-04 14:47:23',1,9);
 
 /*!40000 ALTER TABLE `ventas` ENABLE KEYS */;
 UNLOCK TABLES;

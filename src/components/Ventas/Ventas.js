@@ -30,7 +30,7 @@ import TableRow from '@material-ui/core/TableRow';
 import Radio from '@material-ui/core/Radio';
 import RadioButtonUncheckedIcon from '@material-ui/icons/RadioButtonUnchecked';
 import RadioButtonCheckedIcon from '@material-ui/icons/RadioButtonChecked';
-
+import CircularProgress from '@material-ui/core/CircularProgress';
 
 const CustomTableCell = withStyles(theme => ({
   head: {
@@ -115,6 +115,9 @@ const styles = theme => ({
     '&:nth-of-type(odd)': {
       backgroundColor: theme.palette.background.default,
     },
+  },
+   progress: {
+    margin: 2,
   },
 });
 
@@ -252,7 +255,6 @@ class Ventas extends React.Component {
     items: [],
     tableMode: false,
     errors: defaultErrors,
-    modalProcess: false,
     nextID: '0000',
     tableMode: false,
     loadClientes: [],
@@ -268,7 +270,9 @@ class Ventas extends React.Component {
     total: 0.0,
     precio_contado: 0.0,
     abonos: [],
-    plazo_abonos: 0
+    plazo_abonos: 0,
+    tablaAbonos: false,
+    saving: false
   };
 
   filterClientes = (inputValue: string) => {
@@ -412,54 +416,68 @@ loadArticulos= (inputValue, callback) => {
 
   handleSubmit = event => {
     event.preventDefault();
-
-    const errors = this.state.errors;
-    const modalData = this.state.modalData;
-
-    for (var k in errors){
-      errors[k] = (modalData[k].length == 0);
-      if (errors.hasOwnProperty(k) && errors[k]) {
-        this.props.enqueueSnackbar('No es posible continuar, debe ingresar ' + k + ' es obligatorio');
-        this.setState({
-          errors: errors,
-          
-        });
-        return false;
+    if (this.state.tablaAbonos){
+      //guardar
+      if (this.state.selectedCliente == null){
+        this.props.enqueueSnackbar('No es posible continuar, debe seleccionar un cliente, es obligatorio');
+        return;
       }
-  }
-    const params = this.state.modalData;
-    const items = this.state.items;
 
-    this.setState({ modalProcess: true });
+      if (this.state.articulos.length < 1){
+        this.props.enqueueSnackbar('No es posible continuar, debe seleccionar por lo menos un artículo, es obligatorio');
+        return;
+      }
 
-    const options = {
-      method: 'POST',
-      headers: { 'content-type': 'application/x-www-form-urlencoded' },
-      data: JSON.stringify(params),
-      url: 'http://localhost/vendimia/api/setArticulos'
-    };
+      if (this.state.plazo_abonos == 0){
+        this.props.enqueueSnackbar('No es posible continuar, debe seleccionar un plazo para pagar, es obligatorio');
+        return;
+      }
 
-    axios(options).then(res => {
-      //console.log(res);
-      if (res.data.success){
-        if (params.id_venta == 0){
+      const items = this.state.items;
+
+      const params = {
+        FK_id_cliente: this.state.selectedCliente.value,
+        total: this.state.total,
+        articulos: this.state.articulos,
+        plazo: this.state.plazo_abonos
+      };
+
+      const options = {
+        method: 'POST',
+        headers: { 'content-type': 'application/x-www-form-urlencoded' },
+        data: JSON.stringify(params),
+        url: 'http://localhost/vendimia/api/setVenta'
+      };
+
+      axios(options).then(res => {
+        //console.log(res);
+        if (res.data.success){
           params.id_venta = res.data.id_venta;
+          params.fecha = res.data.fecha;
+          params.estatus = 1;
+          var pos = this.state.loadClientes.map(function(e) { return e.value; }).indexOf(params.FK_id_cliente);
+          params.nombre = this.state.loadClientes[pos].label;
+          delete params.articulos;
           items.push(params);
+          this.setState({ loading: false, tableMode: true, items: items, nextID: pad(res.data.nextID, 4), articulos: [], importe: 0, enganche: 0, bonificacion_enganche: 0, total: 0, precio_contado: 0, plazo_abonos: 0, tablaAbonos: false });
+          
+          this.props.enqueueSnackbar('Bien Hecho. La Venta ha sido registrada correctamente.');
+
         }else{
-          items[params.tableData.id] = params;
+          this.setState({ loading: false});
+          this.props.enqueueSnackbar(res.data.message);
         }
 
-        this.setState({ modalProcess: false, tableMode: true, items: items, errors: defaultErrors, nextID: pad(res.data.nextID, 4) });
         
-        this.props.enqueueSnackbar('Bien Hecho. El Venta ha sido registrado correctamente.');
-
-      }else{
-        this.setState({ modalProcess: false});
-        this.props.enqueueSnackbar(res.data.message);
-      }
-
-        
+      }).catch(error => {
+        this.setState({ loading: false});
+          this.props.enqueueSnackbar(error);
       });
+
+      this.setState({ saving: true});
+    }else{
+      this.setState({ tablaAbonos: true});
+    }
   }
 
 
@@ -710,11 +728,9 @@ loadArticulos= (inputValue, callback) => {
                   <div style={{padding: '2px 0px'}}>Bonificación Enganche: <span className={classes.resultValue}>{moneda(this.state.bonificacion_enganche)}</span></div>
                   <div style={{padding: '2px 0px'}}>Total: <span className={classes.resultValue}>{moneda(this.state.total)}</span></div>
                 </div>
-             
-             
               </Grid>
             </Grid>
-            <Grid item xs={12}>
+            <Grid item xs={12} className={classNames(!this.state.tablaAbonos && classes.hide)} >
                 <Table className={classes.table}>
                   <TableHead>
                     <TableRow>
@@ -758,6 +774,7 @@ loadArticulos= (inputValue, callback) => {
                     color="secondary"
                     onClick={this.handleCancel}
                     className={classes.button}
+                    disabled={this.state.saving}
                   >
                     Cancelar
                   </Button>
@@ -767,10 +784,11 @@ loadArticulos= (inputValue, callback) => {
                     onClick={this.handleSubmit}
                     className={classes.button}
                     type="submit"
-                  label="Submit"
+                    disabled={this.state.saving}
                   >
-                    Siguiente
+                    {this.state.tablaAbonos ? "Guardar" : "Siguiente"}
                   </Button>
+                  {this.state.saving && <CircularProgress  className={classes.progress} />}
               </div>
             </Grid>
         </Grid>
